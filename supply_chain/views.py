@@ -1,11 +1,14 @@
 
-from .models import Transaction
+from .models import Crop, Transaction, PurchasedCrop
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Crop, Transaction, Block
-from .blockchain import Blockchain
+from .models import Crop, Transaction
+from .blockchain import Blockchain, Block
 from django.contrib.auth.models import User
+from django.contrib.auth import logout
+
 
 # Create your views here.
 from django.shortcuts import render, redirect
@@ -40,10 +43,10 @@ def transaction_history(request):
 def dashboard(request):
     user = request.user
     if user.role == 'FARMER':
-        crops = Crop.objects.filter(current_owner=user)
+        crops = Crop.objects.all()
         return render(request, 'farmer_dashboard.html', {'crops': crops})
     elif user.role == 'DISTRIBUTOR':
-        crops = Crop.objects.filter(current_owner=user)
+        crops = Crop.objects.all()
         return render(request, 'distributor_dashboard.html', {'crops': crops})
     elif user.role == 'CONSUMER':
         crops = Crop.objects.all()  # Consumers can view all available crops
@@ -56,21 +59,75 @@ def dashboard(request):
 # Initialize Blockchain instance
 blockchain = Blockchain()
 
+# @login_required
+# def list_crops(request):
+#     if request.method == 'POST':
+#         # Using .get() method to prevent MultiValueDictKeyError
+#         crop_name = request.POST.get('name')
+#         quantity_str = request.POST.get('quantity')
+#         price_str = request.POST.get('price')
+
+#         # Validating the input
+#         if crop_name and quantity_str and price_str:
+#             try:
+#                 quantity = float(quantity_str)
+#                 price = float(price_str)
+
+#                 # Creating the crop instance
+#                 crop = Crop.objects.create(
+#                     name=crop_name,
+#                     quantity=quantity,
+#                     price=price,
+#                     current_owner=request.user,
+#                     current_stage='Listed by Farmer'
+#                 )
+#                 crop.save()
+
+#                 # Get the crop ID after saving the crop
+#                 crop_id = crop.id
+
+#                 # Create a transaction and add it to the blockchain
+#                 transaction = {
+#                     'crop_name': crop_name,
+#                     'quantity': quantity,
+#                     'price': price,
+#                     'owner': request.user.username,
+#                     'stage': 'Listed by Farmer'
+#                 }
+                
+#                 # Assuming you have a recipient for the transaction (it could be set to None or a placeholder if not applicable)
+#                 recipient = None  # Replace with actual recipient if available
+                
+#                 # Add the transaction to the blockchain
+#                 blockchain.add_transaction(transaction, recipient, price, crop_id)
+
+#                 # Create a new block to store the transaction
+#                 blockchain.mine_block()
+
+#                 messages.success(request, f"Crop '{crop_name}' listed successfully and added to the blockchain!")
+#             except ValueError:
+#                 messages.error(request, "Invalid quantity or price. Please enter numeric values.")
+#         else:
+#             messages.error(request, "All fields are required.")
+
+#         return redirect('list_crops')
+
+#     # Fetching all crops to display
+#     crops = Crop.objects.all()
+#     return render(request, 'list_crops.html', {'crops': crops})
+
 @login_required
 def list_crops(request):
     if request.method == 'POST':
-        # Using .get() method to prevent MultiValueDictKeyError
         crop_name = request.POST.get('name')
         quantity_str = request.POST.get('quantity')
         price_str = request.POST.get('price')
 
-        # Validating the input
         if crop_name and quantity_str and price_str:
             try:
                 quantity = float(quantity_str)
                 price = float(price_str)
 
-                # Creating the crop instance
                 crop = Crop.objects.create(
                     name=crop_name,
                     quantity=quantity,
@@ -80,18 +137,16 @@ def list_crops(request):
                 )
                 crop.save()
 
-                # Create a transaction and add it to the blockchain
-                transaction = {
-                    'crop_name': crop_name,
-                    'quantity': quantity,
-                    'price': price,
-                    'owner': request.user.username,
-                    'stage': 'Listed by Farmer'
-                }
-                blockchain.add_transaction(transaction)
+                # Prepare transaction details
+                sender = request.user.username  # or user ID if needed
+                recipient = None  # Depending on your application, this could be an actual recipient
+                crop_id = crop.id
 
-                # Create a new block to store the transaction
-                blockchain.mine_block()
+                # Add the transaction to the blockchain
+                blockchain.add_transaction(sender, recipient, price, crop_id)
+
+                # Mine a new block
+                blockchain.mine_block()  # Call the mine_block method
 
                 messages.success(request, f"Crop '{crop_name}' listed successfully and added to the blockchain!")
             except ValueError:
@@ -101,10 +156,8 @@ def list_crops(request):
 
         return redirect('list_crops')
 
-    # Fetching all crops to display
     crops = Crop.objects.all()
     return render(request, 'list_crops.html', {'crops': crops})
-
 
 # def buy_crop(request, crop_id):
 #     crop = Crop.objects.get(id=crop_id)
@@ -141,38 +194,71 @@ def list_crops(request):
 
 #     return render(request, 'buy_crop.html', {'crop': crop})
 @login_required
-def buy_crop(request, crop_id):
+def buy_crops(request, crop_id):
+    # Get the crop based on crop_id
     crop = get_object_or_404(Crop, id=crop_id)
 
     if request.method == 'POST':
-        # Allow only distributors to buy crops
-        if request.user.role != 'distributor' or request.user.role != 'consumer':
-            messages.error(request, "Only distributors and consumers can buy crops.")
-            return redirect('list_crops')
+        # Handle the purchase logic
+        quantity_to_buy = int(request.POST.get('quantity', 0))
+        if quantity_to_buy <= 0 or quantity_to_buy > crop.quantity:
+            return JsonResponse({'error': 'Invalid quantity'}, status=400)
 
-        if crop.status == 'listed' and crop.quantity > 0:
-            # Update crop details
-            crop.current_owner = request.user
+        # Add the transaction to the blockchain
+        blockchain.add_transaction(
+            sender=crop.current_owner.username,
+            recipient=request.user.username,
+            amount=crop.price * quantity_to_buy,
+            crop_id=crop_id
+        )
+
+        # Mine a new block to confirm the transaction
+        mined_block = blockchain.mine_block()
+
+        # Create a transaction entry in the database
+        transaction = Transaction.objects.create(
+            seller=crop.current_owner,
+            buyer=request.user,  # Assuming the user is logged in
+            crop=crop,
+            quantity=quantity_to_buy,
+            price=crop.price,
+            transaction_hash=mined_block.hash  # Use the block hash
+        )
+
+        # Create a PurchasedCrop entry
+        purchased_crop = PurchasedCrop.objects.create(
+            seller=crop.current_owner,
+            buyer=request.user,
+            crop=crop,
+            quantity=quantity_to_buy,
+            price=crop.price,
+            transaction_hash=mined_block.hash  # Use the same hash for tracing
+        )
+
+        # Update the crop's quantity
+        crop.quantity -= quantity_to_buy
+        if crop.quantity == 0:
             crop.status = 'sold'
-            crop.quantity -= 1
+        crop.save()
 
-            # Create a blockchain transaction (pseudo-code)
-            transaction_index = blockchain.new_transaction(
-                sender=crop.current_owner.username,
-                recipient=request.user.username,
-                crop_name=crop.name,
-                quantity=1,
-                price=crop.price
-            )
-            crop.transaction_hash = f'Transaction #{transaction_index}'
-            crop.save()
-
-            # Mine the new block (pseudo-code)
-            blockchain.create_block(proof=100)
-            messages.success(request, f"You have purchased {crop.name}!")
-            return redirect('transaction_history')
-
-    return render(request, 'buy_crop.html', {'crop': crop})
+        return render(request, 'purchase_success.html', {
+            'transaction_id': transaction.id,
+            'purchased_crop_id': purchased_crop.id
+        })
+    
+    elif request.method == 'GET':
+        # Optionally return crop details or a form for purchase
+        return render(request, 'buy_crop.html', {
+            'crop': crop
+        })
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+@login_required
+def purchased_crops(request):
+    # Example query, adjust as needed
+    purchased_crops = PurchasedCrop.objects.filter(buyer=request.user)
+    return render(request, 'purchased_crops.html', {'purchased_crops': purchased_crops})
 
 @login_required
 def sell_crop(request):
@@ -232,11 +318,11 @@ def trace_crop(request, crop_id):
 
 @login_required
 def user_logout(request):
-    # logout(request)  # This will log out the user
+    logout(request)  # This will log out the user
     return redirect('dashboard')   # Redirect to a success page
 
-def logout_success(request):
-    return redirect('dashboard')
+# def logout_success(request):
+#     return redirect('dashboard')
 
 # views.py
 from django.contrib.auth import login

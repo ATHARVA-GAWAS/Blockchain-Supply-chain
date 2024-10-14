@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Purchased Crops</h1>
+<ul>
+    {% for crop in purchased_crops %}
+        <li>
+            Crop Name: {{ crop.crop.name }}<br>
+            Quantity: {{ crop.quantity }}<br>
+            Price: {{ crop.price }}<br>
+            Seller: {{ crop.seller.username }}<br>
+            Buyer:{{crop.buyer.username}}<br>
+            Transaction Hash: {{ crop.transaction_hash }}<br>
+        </li>
+        <hr>
+    {% empty %}
+        <p>No crops purchased yet.</p>
+    {% endfor %}
+</ul>
+{% endblock %}
