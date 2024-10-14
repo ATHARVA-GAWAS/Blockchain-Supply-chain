@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% comment %} {% extends 'base.html' %}
+{% block content %}
+    <h1>List a New Crop</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">List Crop</button>
+    </form>
+{% endblock %} {% endcomment %}
+
+
+
+{% block content %}
+    <h1>List a New Crop</h1>
+    
+    <!-- Display messages for success or error -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div>
+            <label for="name">Crop Name:</label>
+            <input type="text" name="name" id="name" required>
+        </div>
+        <div>
+            <label for="quantity">Quantity:</label>
+            <input type="number" name="quantity" id="quantity" step="0.01" required>
+        </div>
+        <div>
+            <label for="price">Price:</label>
+            <input type="number" name="price" id="price" step="0.01" required>
+        </div>
+        <button type="submit">List Crop</button>
+    </form>
+
+    <h2>Available Crops</h2>
+    <ul>
+        {% for crop in crops %}
+            <li>{{ crop.name }} - Quantity: {{ crop.quantity }} - Price: {{ crop.price }}</li>
+        {% empty %}
+            <li>No crops available.</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

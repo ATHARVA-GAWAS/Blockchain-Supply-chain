@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>Your Transaction History</h1>
+    <ul>
+        {% for transaction in transactions %}
+            <li>{{ transaction.crop.name }} sold by {{ transaction.seller.username }} to {{ transaction.buyer.username }} - Quantity: {{ transaction.quantity }} - Date: {{ transaction.timestamp }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

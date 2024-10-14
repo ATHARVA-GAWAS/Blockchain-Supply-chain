@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Trace Crop: {{ crop.name }}</h1>
+    <p>Current Owner: {{ crop.current_owner.username }}</p>
+    <p>Current Stage: {{ crop.current_stage }}</p>
+    <p>Status: {{ crop.status }}</p>
+    <p>Transaction Hash: {{ crop.transaction_hash }}</p>
+    <a href="{% url 'list_crops' %}">Back to Crop List</a>
+{% endblock %}

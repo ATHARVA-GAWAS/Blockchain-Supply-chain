@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>Farmer Dashboard</h1>
+    <h2>Your Crops</h2>
+    <ul>
+        {% for crop in crops %}
+            <li>{{ crop.name }} - {{ crop.quantity }} kg - {{ crop.current_stage }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

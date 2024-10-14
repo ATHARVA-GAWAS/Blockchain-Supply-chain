@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>Consumer Dashboard</h1>
+    <h2>Available Crops</h2>
+    <ul>
+        {% for crop in crops %}
+            <li>{{ crop.name }} - {{ crop.quantity }} kg - {{ crop.current_stage }}
+                <a href="{% url 'buy_crop' crop.id %}">Buy</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

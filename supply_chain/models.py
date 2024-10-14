@@ -1,45 +1,86 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings 
+from django.contrib.auth.models import AbstractUser
+import hashlib
+import json
+from time import time
 
-class User(models.Model):
+# Create your models here.
+
+from django.contrib.auth.models import AbstractUser
+
+class CustomUser(AbstractUser):
     ROLE_CHOICES = [
-        ('farmer', 'Farmer'),
-        ('distributor', 'Distributor'),
-        ('vendor', 'Vendor'),
-        ('wholesaler', 'Wholesaler'),
-        ('retailer', 'Retailer'),
-        ('consumer', 'Consumer'),
+        ('FARMER', 'Farmer'),
+        ('DISTRIBUTOR', 'Distributor'),
+        ('CONSUMER', 'Consumer'),
     ]
+    role = models.CharField(max_length=100, choices=ROLE_CHOICES)
     
-    name = models.CharField(max_length=100)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-
-    def __str__(self):
-        return f"{self.name} ({self.role})"
-
 class Crop(models.Model):
     name = models.CharField(max_length=100)
-    quantity = models.PositiveIntegerField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    product_id = models.CharField(max_length=50, unique=True)
-    seller = models.ForeignKey(User, related_name='crops', on_delete=models.CASCADE)  # Link to the seller
-
+    quantity = models.FloatField()
+    price = models.FloatField()
+    current_owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='owned_crops')
+    status = models.CharField(max_length=20, choices=[('listed', 'Listed'), ('sold', 'Sold')])
+    current_stage = models.CharField(max_length=100, default='Listed by Farmer')
+    transaction_hash = models.CharField(max_length=64, blank=True, null=True)
+    
     def __str__(self):
-        return self.name
+        return f"{self.name} - {self.quantity} kg - {self.current_stage}"
+
+
+    
+# class Crop(models.Model):
+#     name = models.CharField(max_length=100)
+#     quantity = models.FloatField()
+#     price = models.FloatField()
+#     current_owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+#     current_stage = models.CharField(max_length=50, default="Listed by Farmer")
+
+#     def __str__(self):
+#         return f"{self.name} - {self.quantity} kg - {self.current_stage}"
 
 class Transaction(models.Model):
+    buyer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='buyer')
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='seller')
     crop = models.ForeignKey(Crop, on_delete=models.CASCADE)
-    seller = models.ForeignKey(User, related_name='seller', on_delete=models.CASCADE)
-    buyer = models.ForeignKey(User, related_name='buyer', on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
-    price_per_kg = models.DecimalField(max_digits=10, decimal_places=2)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2)
-    date = models.DateTimeField(auto_now_add=True)
-    payment_status = models.CharField(max_length=20, choices=[
-        ('pending', 'Pending'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
-    ])
+    quantity = models.FloatField()
+    price = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.buyer} bought {self.quantity} kg of {self.crop.name} from {self.seller} for ₹{self.total_price} on {self.date.strftime('%Y-%m-%d')}"
+        return f"Transaction: {self.seller} -> {self.buyer} | {self.crop.name}"
+
+
+
+class Block(models.Model):
+    index = models.IntegerField(null=True)
+    previous_hash = models.CharField(max_length=64)
+    timestamp = models.FloatField(default=time)
+    transactions = models.JSONField(default=list)  # Stores transactions as a JSON list
+    proof = models.IntegerField()
+
+    def __str__(self):
+        return f"Block {self.index}"
+
+    @classmethod
+    def create_block(cls, index, previous_hash, transactions, proof):
+        """Creates a new block and saves it to the database."""
+        block = cls(
+            index=index,
+            previous_hash=previous_hash,
+            transactions=json.dumps(transactions),  # Convert transactions to JSON string for storage
+            proof=proof
+        )
+        block.save()
+        return block
+
+    @classmethod
+    def calculate_hash(cls, block):
+        """Calculates the hash of a block."""
+        block_string = json.dumps(block.__dict__, sort_keys=True).encode()
+        return hashlib.sha256(block_string).hexdigest()
+
+# class Block(models.Model):
+

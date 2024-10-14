@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agricultural Supply Chain</title>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                {% if user.is_authenticated %}
+                <li><a href="{% url 'logout' %}" class="logout-button">Logout</a></li>
+            {% else %}
+                <li><a href="{% url 'login' %}">Login</a></li>
+                <li><a href="{% url 'register' %}">Register</a></li>
+            {% endif %}
+                <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li><a href="{% url 'list_crops' %}">List Crops</a></li>
+                <li><a href="{% url 'transaction_history' %}">Transaction History</a></li>
+                <li><a href="{% url 'admin:index' %}">Admin</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

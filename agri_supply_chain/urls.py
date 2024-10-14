@@ -1,8 +1,7 @@
-"""
-URL configuration for agri_supply_chain project.
+"""agri_supply_chain URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.0/topics/http/urls/
+    https://docs.djangoproject.com/en/4.1/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
@@ -15,8 +14,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.views.generic import RedirectView
 
 urlpatterns = [
+    path('', RedirectView.as_view(url='/dashboard/')),  # Redirect root URL to dashboard
     path('admin/', admin.site.urls),
+    path('', include('supply_chain.urls')),
+    path('accounts/', include('django.contrib.auth.urls')),  # Authentication URLs
 ]
+
