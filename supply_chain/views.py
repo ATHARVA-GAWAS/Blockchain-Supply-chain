@@ -370,3 +370,8 @@ def custom_login(request):
         form = AuthenticationForm()
 
     return render(request, 'registration/login.html', {'form': form})
+
+
+def view_blockchain(request):
+    blockchain_data = blockchain.get_blockchain_data()  # Get blockchain data
+    return render(request, 'view_blockchain.html', {'blockchain_data': blockchain_data})

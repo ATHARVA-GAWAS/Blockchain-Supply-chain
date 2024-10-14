@@ -221,3 +221,16 @@ class Blockchain:
         hash_result = hashlib.sha256(block_string).hexdigest()
         print(f"Hash for block {self.index}: {hash_result}")
         return hash_result
+
+    def get_blockchain_data(self):
+        # Convert each block in the chain to a dictionary format
+        blockchain_data = []
+        for block in self.chain:
+            blockchain_data.append({
+                'index': block.index,
+                'timestamp': block.timestamp,
+                'transactions': block.transactions,
+                'previous_hash': block.previous_hash,
+                'hash': block.hash
+            })
+        return blockchain_data
