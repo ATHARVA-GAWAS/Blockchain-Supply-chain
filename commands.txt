@@ -1,0 +1,40 @@
+# commands.sh
+
+# 1. Create a virtual environment
+python -m venv venv
+
+# 2. Activate the virtual environment
+# Windows
+venv\Scripts\activate
+
+# macOS/Linux
+source venv/bin/activate
+
+# 3. Install dependencies from requirements.txt
+pip install -r requirements.txt
+
+# 4. Set up Django project (only needed initially)
+python manage.py migrate
+
+# 5. Create a Django superuser for admin access
+python manage.py createsuperuser
+
+# 6. Run the Django development server
+python manage.py runserver
+
+# 7. Collect static files (if deploying to production)
+python manage.py collectstatic
+
+# 8. Deactivate the virtual environment
+deactivate
+
+# 9. Additional commands for Ethereum
+# Add your Ethereum environment variables to the .env file
+# INFURA_PROJECT_ID, CONTRACT_ADDRESS, ETHEREUM_PRIVATE_KEY
+
+# 10. Install additional dependencies (if needed)
+# Example: Installing new packages
+pip install <package_name>
+
+# 11. Check for any new package additions to update requirements.txt
+pip freeze > requirements.txt
