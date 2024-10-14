@@ -7,7 +7,7 @@ from . import views
 from django.urls import path
 from .views import custom_login
 from .views import buy_crops, purchased_crops
-from .views import list_crops, buy_crops, sell_crop, trace_crop
+from .views import trace_crops,list_crops, buy_crops, sell_crop, trace_crop
 from .views import blockchain_status  # Import your new view
 # urlpatterns = [
 #     path('', home, name='home'),  # Map root URL to the home view
@@ -33,7 +33,7 @@ urlpatterns = [
     path('logout/', views.user_logout, name='logout'),
     # path('logout/success/', views.logout_success, name='logout_success'),  # Add this line
     path('sell_crop/', sell_crop, name='sell_crop'),
-    path('trace_crop/<int:crop_id>/', trace_crop, name='trace_crop'),
+    path('trace_crops/', trace_crops, name='trace_crops'),
     path('blockchain_status/', blockchain_status, name='blockchain_status'),
     # other URL patterns...
     path('accounts/logout/', views.user_logout, name='logout'),

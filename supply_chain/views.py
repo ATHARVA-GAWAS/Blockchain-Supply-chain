@@ -261,6 +261,32 @@ def purchased_crops(request):
     return render(request, 'purchased_crops.html', {'purchased_crops': purchased_crops})
 
 @login_required
+def trace_crops(request):
+    # Get the crops purchased by the logged-in user
+    purchased_crops = PurchasedCrop.objects.filter(buyer=request.user)
+
+    # Add traceability information for each purchased crop
+    crops_with_traceability = []
+    for purchased_crop in purchased_crops:
+        crop_id = purchased_crop.crop.id
+
+        # Get the traceability information from the blockchain
+        traceability_info = blockchain.trace_crop(crop_id)
+
+        # Get the list of transactions related to this crop
+        transactions = Transaction.objects.filter(crop_id=crop_id)
+
+        # Append the crop data along with traceability and transaction information
+        crops_with_traceability.append({
+            'purchased_crop': purchased_crop,
+            'traceability_info': traceability_info,
+            'transactions': transactions,
+        })
+
+    # Pass the crops with traceability data to the template
+    return render(request, 'trace_crop.html', {'crops_with_traceability': crops_with_traceability})
+
+@login_required
 def sell_crop(request):
     if request.method == 'POST':
         # Allow only distributors to sell crops
