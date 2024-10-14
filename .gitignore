@@ -7,9 +7,7 @@ db.sqlite3
 # Environment variables
 .env
 
-# Django specific folders
-/static/
-/media/
+
 
 # Byte-compiled / optimized / DLL files
 *.py[cod]
