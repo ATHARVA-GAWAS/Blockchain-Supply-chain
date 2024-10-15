@@ -1,6 +1,7 @@
 
 from .models import Crop, Transaction, PurchasedCrop
 from django.contrib import messages
+from django.http import HttpResponseForbidden
 from django.http import JsonResponse
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -118,6 +119,9 @@ blockchain = Blockchain()
 
 @login_required
 def list_crops(request):
+    if request.user.role=='CUSTOMER':
+        return render(request, 'not_allowed.html')
+    
     if request.method == 'POST':
         crop_name = request.POST.get('name')
         quantity_str = request.POST.get('quantity')
@@ -133,7 +137,7 @@ def list_crops(request):
                     quantity=quantity,
                     price=price,
                     current_owner=request.user,
-                    current_stage='Listed by Farmer'
+                    current_stage=f'Listed by {request.user.role}'
                 )
                 crop.save()
 
@@ -196,6 +200,9 @@ def list_crops(request):
 @login_required
 def buy_crops(request, crop_id):
     # Get the crop based on crop_id
+    if request.user.role=='FARMER':
+        return render(request, 'not_allowed.html')
+    
     crop = get_object_or_404(Crop, id=crop_id)
 
     if request.method == 'POST':

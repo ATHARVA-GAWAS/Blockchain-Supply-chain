@@ -79,6 +79,7 @@ class Block(models.Model):
         block = cls(
             index=index,
             previous_hash=previous_hash,
+            timestamp=time.time(), 
             transactions=json.dumps(transactions),  # Convert transactions to JSON string for storage
             proof=proof
         )
