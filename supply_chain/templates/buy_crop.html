@@ -1,0 +1,31 @@
+<!-- templates/buy_crop.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1>Buy Crop</h1>
+    <div class="crop-details">
+        <h2>{{ crop.name }}</h2>
+        <p><strong>Available Quantity:</strong> {{ crop.quantity }}</p>
+        <p><strong>Price per Unit:</strong> ₹{{ crop.price }}</p>
+        <p><strong>Current Owner:</strong> {{ crop.current_owner.username }}</p>
+    </div>
+
+    <form method="post" action="{% url 'buy_crops' crop.id %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="quantity" min="1" max="{{ crop.quantity }}" required class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary">Buy</button>
+    </form>
+
+    {% if messages %}
+        <div class="alert alert-info mt-3">
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

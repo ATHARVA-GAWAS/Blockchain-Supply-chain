@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>Purchase Successful</h1>
+    <p>Thank you for your purchase! Your transaction has been completed successfully.</p>
+    <p>Transaction ID: {{ transaction_id }}</p>
+    <p>Purchased Crop ID: {{ purchased_crop_id }}</p>
+    <a href="{% url 'home' %}">Return to Home</a>
+{% endblock %}

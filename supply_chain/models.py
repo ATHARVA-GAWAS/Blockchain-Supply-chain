@@ -41,18 +41,27 @@ class Crop(models.Model):
 #     def __str__(self):
 #         return f"{self.name} - {self.quantity} kg - {self.current_stage}"
 
+# class Transaction(models.Model):
+#     buyer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='buyer')
+#     seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='seller')
+#     crop = models.ForeignKey(Crop, on_delete=models.CASCADE)
+#     quantity = models.FloatField()
+#     price = models.FloatField()
+#     transaction_hash = models.CharField(max_length=255) 
+#     timestamp = models.DateTimeField(auto_now_add=True)
+
+#     def __str__(self):
+#         return f"Transaction: {self.seller} -> {self.buyer} | {self.crop.name}"
+
+
 class Transaction(models.Model):
-    buyer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='buyer')
-    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='seller')
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='sold_transactions', on_delete=models.CASCADE)
+    buyer = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='purchased_transactions', on_delete=models.CASCADE)  # Correct field name
     crop = models.ForeignKey(Crop, on_delete=models.CASCADE)
-    quantity = models.FloatField()
-    price = models.FloatField()
+    quantity = models.PositiveIntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_hash = models.CharField(max_length=255)
     timestamp = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Transaction: {self.seller} -> {self.buyer} | {self.crop.name}"
-
-
 
 class Block(models.Model):
     index = models.IntegerField(null=True)
@@ -70,6 +79,7 @@ class Block(models.Model):
         block = cls(
             index=index,
             previous_hash=previous_hash,
+            timestamp=time.time(), 
             transactions=json.dumps(transactions),  # Convert transactions to JSON string for storage
             proof=proof
         )
@@ -84,3 +94,14 @@ class Block(models.Model):
 
 # class Block(models.Model):
 
+class PurchasedCrop(models.Model):
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='sold_crops', on_delete=models.CASCADE)
+    buyer = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='purchased_crops', on_delete=models.CASCADE)
+    crop = models.ForeignKey(Crop, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_hash = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Purchased: {self.crop.name} by {self.buyer.username} from {self.seller.username} | Quantity: {self.quantity} | Price: {self.price}"

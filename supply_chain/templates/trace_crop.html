@@ -1,10 +1,44 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>Trace Crop: {{ crop.name }}</h1>
-    <p>Current Owner: {{ crop.current_owner.username }}</p>
-    <p>Current Stage: {{ crop.current_stage }}</p>
-    <p>Status: {{ crop.status }}</p>
-    <p>Transaction Hash: {{ crop.transaction_hash }}</p>
-    <a href="{% url 'list_crops' %}">Back to Crop List</a>
+<h1>Trace Crops</h1>
+<ul>
+    {% for item in crops_with_traceability %}
+        <li>
+            <h2>Crop Name: {{ item.purchased_crop.crop.name }}</h2>
+            <p>Quantity: {{ item.purchased_crop.quantity }}</p>
+            <p>Price: {{ item.purchased_crop.price }}</p>
+            <p>Seller: {{ item.purchased_crop.seller.username }}</p>
+            <p>Transaction Hash: {{ item.purchased_crop.transaction_hash }}</p>
+            
+            <!-- Traceability Information -->
+            <h3>Traceability</h3>
+            {% if item.traceability_info %}
+                <p>Previous Owner: {{ item.traceability_info.previous_hash }}</p>
+            {% else %}
+                <p>Traceability information not available.</p>
+            {% endif %}
+
+            <!-- Transaction History -->
+            <h3>Transaction History</h3>
+            <ul>
+                {% for transaction in item.transactions %}
+                    <li>
+                        Buyer: {{ transaction.buyer.username }}<br>
+                        Seller: {{ transaction.seller.username }}<br>
+                        Quantity: {{ transaction.quantity }}<br>
+                        Price: {{ transaction.price }}<br>
+                        Timestamp: {{ transaction.timestamp }}<br>
+                    </li>
+                    <hr>
+                {% empty %}
+                    <p>No transaction history available for this crop.</p>
+                {% endfor %}
+            </ul>
+        </li>
+        <hr>
+    {% empty %}
+        <p>No crops purchased yet.</p>
+    {% endfor %}
+</ul>
 {% endblock %}
