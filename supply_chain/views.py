@@ -13,7 +13,7 @@ from django.contrib.auth import logout
 
 # Create your views here.
 from django.shortcuts import render, redirect
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, CropPriceUpdateForm
 
 from django.shortcuts import render, redirect
 from .models import Crop
@@ -382,3 +382,46 @@ def custom_login(request):
 def view_blockchain(request):
     blockchain_data = blockchain.get_blockchain_data()  # Get blockchain data
     return render(request, 'view_blockchain.html', {'blockchain_data': blockchain_data})
+
+@login_required
+def edit_crop_price(request, crop_id):
+    crop = get_object_or_404(Crop, id=crop_id)
+
+    # Ensure only the current owner can edit the crop
+    if request.user != crop.current_owner:
+        messages.error(request, "You do not have permission to edit this crop.")
+        return redirect('list_crops')
+
+    if request.method == 'POST':
+        form = CropPriceUpdateForm(request.POST, instance=crop)
+        if form.is_valid():
+            # Get the updated price
+            updated_price = form.cleaned_data['price']
+
+            # Update the crop price
+            crop.price = updated_price
+            crop.save()  # Save the updated crop
+
+            # Prepare transaction details
+            sender = request.user.username
+            recipient = None  # Depending on your application, this could be an actual recipient
+
+            # Add the price update transaction to the blockchain
+            blockchain.add_transaction(sender, recipient, updated_price, crop.id)
+
+            # Mine a new block to confirm the transaction
+            blockchain.mine_block()
+
+            messages.success(request, f"Price for '{crop.name}' updated successfully and recorded in the blockchain!")
+            return redirect('list_crops')
+    else:
+        form = CropPriceUpdateForm(instance=crop)
+
+    return render(request, 'edit_crop_price.html', {'form': form, 'crop': crop})
+
+@login_required
+def my_crops(request):
+    # Get the crops listed by the current user
+    crops = Crop.objects.filter(current_owner=request.user)
+
+    return render(request, 'my_crops.html', {'crops': crops})

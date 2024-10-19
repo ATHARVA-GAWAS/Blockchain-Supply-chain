@@ -2,10 +2,10 @@
 from django.urls import path
 from .views import dashboard, list_crops, buy_crops, transaction_history
 from .views import home,register  # Import your home view
-from .views import profile_view
+from .views import profile_view, edit_crop_price
 from . import views
 from django.urls import path
-from .views import custom_login
+from .views import custom_login,my_crops
 from .views import buy_crops, purchased_crops
 from .views import trace_crops,list_crops,view_blockchain, buy_crops, sell_crop, trace_crop
 from .views import blockchain_status  # Import your new view
@@ -36,6 +36,8 @@ urlpatterns = [
     path('trace_crops/', trace_crops, name='trace_crops'),
     path('blockchain_status/', blockchain_status, name='blockchain_status'),
     # other URL patterns...
+    path('my-crops/', my_crops, name='my_crops'),
+    path('edit-crop-price/<int:crop_id>/', edit_crop_price, name='edit_crop_price'),
     path('accounts/logout/', views.user_logout, name='logout'),
     path('purchased_crops/', purchased_crops, name='purchased_crops'),
     path('blockchain/', view_blockchain, name='view_blockchain'),
