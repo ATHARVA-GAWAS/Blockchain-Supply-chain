@@ -1,6 +1,7 @@
 import hashlib
 import json
 import uuid
+from .models import StoreBlock
 from datetime import datetime
 from .models import Block
 from time import time
@@ -143,6 +144,15 @@ class Blockchain:
             transactions=self.current_transactions,
             previous_hash=previous_hash or self.chain[-1].hash
         )
+
+        store_block = StoreBlock(
+            index=block.index,
+            timestamp=block.timestamp,
+            transactions=block.transactions,
+            previous_hash=previous_hash or '0',
+            hash=block.hash
+        )
+        store_block.save()
         self.current_transactions = []  # Reset the current transactions
         self.chain.append(block)
         return block

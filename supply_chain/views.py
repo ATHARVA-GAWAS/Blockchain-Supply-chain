@@ -5,7 +5,7 @@ from django.http import HttpResponseForbidden
 from django.http import JsonResponse
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Crop, Transaction
+from .models import Crop, Transaction, StoreBlock
 from .blockchain import Blockchain, Block
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
@@ -380,7 +380,7 @@ def custom_login(request):
 
 
 def view_blockchain(request):
-    blockchain_data = blockchain.get_blockchain_data()  # Get blockchain data
+    blockchain_data = StoreBlock.objects.all()  # Get blockchain data
     return render(request, 'view_blockchain.html', {'blockchain_data': blockchain_data})
 
 @login_required
