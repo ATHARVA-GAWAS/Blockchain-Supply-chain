@@ -5,6 +5,7 @@
     <ul>
         {% for crop in crops %}
             <li>{{ crop.name }} - {{ crop.quantity }} kg - {{ crop.current_stage }}</li>
+            <a href="{% url 'buy_crops' crop.id %}">Buy</a>
         {% endfor %}
     </ul>
 {% endblock %}

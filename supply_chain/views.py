@@ -200,8 +200,8 @@ def list_crops(request):
 @login_required
 def buy_crops(request, crop_id):
     # Get the crop based on crop_id
-    if request.user.role=='FARMER':
-        return render(request, 'not_allowed.html')
+    # if request.user.role=='FARMER':
+    #     return render(request, 'not_allowed.html')
     
     crop = get_object_or_404(Crop, id=crop_id)
 
