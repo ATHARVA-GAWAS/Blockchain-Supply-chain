@@ -10,6 +10,13 @@ class CropForm(forms.ModelForm):
 # supply_chain/forms.py
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser
+from django import forms
+from .models import Crop
+
+class CropPriceUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Crop
+        fields = ['price']  # Only allow editing of the price field
 
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
