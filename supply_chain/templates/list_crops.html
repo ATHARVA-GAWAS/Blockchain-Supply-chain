@@ -1,52 +1,104 @@
 {% extends 'base.html' %}
 
-{% comment %} {% extends 'base.html' %}
 {% block content %}
-    <h1>List a New Crop</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">List Crop</button>
-    </form>
-{% endblock %} {% endcomment %}
+<h1>List Crops</h1>
 
+<!-- Crop Listing Form -->
+<form method="POST" action="{% url 'list_crops' %}">
+    {% csrf_token %}
+    {{ form.as_p }}  <!-- Render the form fields here -->
 
+    <div>
+        <label for="visibility">Visibility:</label>
+        <select name="visibility" id="visibility" onchange="toggleUserSelection(this.value)">
+            <option value="public">Public</option>
+            <option value="private">Specific Users Only</option>
+        </select>
+    </div>
 
-{% block content %}
-    <h1>List a New Crop</h1>
-    
-    <!-- Display messages for success or error -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
+    <div id="userSelection" style="display:none;">
+        <label for="allowed_users">Select Users:</label>
+        <select name="allowed_users" id="allowed_users" multiple>
+            {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
 
-    <form method="post">
-        {% csrf_token %}
-        <div>
-            <label for="name">Crop Name:</label>
-            <input type="text" name="name" id="name" required>
-        </div>
-        <div>
-            <label for="quantity">Quantity:</label>
-            <input type="number" name="quantity" id="quantity" step="0.01" required>
-        </div>
-        <div>
-            <label for="price">Price:</label>
-            <input type="number" name="price" id="price" step="0.01" required>
-        </div>
-        <button type="submit">List Crop</button>
-    </form>
+    <button type="submit">List Crop</button>
+</form>
 
-    <h2>Available Crops</h2>
+{% if messages %}
     <ul>
-        {% for crop in crops %}
-            <li>{{ crop.name }} - Quantity: {{ crop.quantity }} - Price: {{ crop.price }}</li>
-        {% empty %}
-            <li>No crops available.</li>
+        {% for message in messages %}
+            <li>{{ message }}</li>
         {% endfor %}
     </ul>
+{% endif %}
+
+<h2>Your Crops</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Crop Name</th>
+            <th>Quantity (kg)</th>
+            <th>Price (per kg)</th>
+            <th>Status</th>
+            <th>Owner</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for crop in crops %}
+            {% if crop.current_owner == request.user or request.user in crop.allowed_users.all %}
+                <tr>
+                    <td>{{ crop.name }}</td>
+                    <td>{{ crop.quantity }}</td>
+                    <td>{{ crop.price }}</td>
+                    <td>{{ crop.current_stage }}</td>
+                    <td>{{ crop.current_owner.username }}</td>
+                </tr>
+            {% endif %}
+        {% empty %}
+            <tr>
+                <td colspan="5">You have no crops listed.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Publicly Available Crops</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Crop Name</th>
+            <th>Quantity (kg)</th>
+            <th>Price (per kg)</th>
+            <th>Status</th>
+            <th>Owner</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for crop in public_crops %}
+            <tr>
+                <td>{{ crop.name }}</td>
+                <td>{{ crop.quantity }}</td>
+                <td>{{ crop.price }}</td>
+                <td>{{ crop.current_stage }}</td>
+                <td>{{ crop.current_owner.username }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="5">No public crops available.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<script>
+function toggleUserSelection(value) {
+    document.getElementById('userSelection').style.display = (value === 'private') ? 'block' : 'none';
+}
+</script>
+
 {% endblock %}

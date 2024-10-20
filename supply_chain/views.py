@@ -5,10 +5,11 @@ from django.http import HttpResponseForbidden
 from django.http import JsonResponse
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Crop, Transaction, StoreBlock
+from .models import Crop, Transaction, StoreBlock,CustomUser
 from .blockchain import Blockchain, Block
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
+from .forms import CropForm
 
 
 # Create your views here.
@@ -43,18 +44,31 @@ def transaction_history(request):
 @login_required
 def dashboard(request):
     user = request.user
+
     if user.role == 'FARMER':
-        crops = Crop.objects.all()
-        return render(request, 'farmer_dashboard.html', {'crops': crops})
+        # Crops specifically allowed for this user (those listed for them by others)
+        user_crops = Crop.objects.filter(allowed_users=user)
+
+        # Publicly available crops (those that are public for all users)
+        public_crops = Crop.objects.filter(visibility='public')
+
+        return render(request, 'farmer_dashboard.html', {'user_crops': user_crops, 'public_crops': public_crops})
+
     elif user.role == 'DISTRIBUTOR':
-        crops = Crop.objects.all()
-        return render(request, 'distributor_dashboard.html', {'crops': crops})
+        user_crops = Crop.objects.filter(allowed_users=user)
+        public_crops = Crop.objects.filter(visibility='public')
+
+        return render(request, 'distributor_dashboard.html', {'user_crops': user_crops, 'public_crops': public_crops})
+
     elif user.role == 'CONSUMER':
-        crops = Crop.objects.all()  # Consumers can view all available crops
-        return render(request, 'consumer_dashboard.html', {'crops': crops})
+        # Consumers can view all crops that are publicly available
+        public_crops = Crop.objects.filter(visibility='public')
+        user_crops = Crop.objects.filter(allowed_users=user)
+        
+        return render(request, 'consumer_dashboard.html', {'user_crops': user_crops,'public_crops': public_crops})
+
     else:
         return redirect('list_crops')
-
 
 
 # Initialize Blockchain instance
@@ -117,51 +131,54 @@ blockchain = Blockchain()
 #     crops = Crop.objects.all()
 #     return render(request, 'list_crops.html', {'crops': crops})
 
+from django.shortcuts import render, redirect
+from .models import Crop  # Assuming you have a Crop model
+from django.contrib import messages
+from django.contrib.auth.models import User
+
 @login_required
 def list_crops(request):
-    if request.user.role=='CUSTOMER':
+    if request.user.role == 'CUSTOMER':
         return render(request, 'not_allowed.html')
-    
+
     if request.method == 'POST':
-        crop_name = request.POST.get('name')
-        quantity_str = request.POST.get('quantity')
-        price_str = request.POST.get('price')
+        form = CropForm(request.POST)
 
-        if crop_name and quantity_str and price_str:
-            try:
-                quantity = float(quantity_str)
-                price = float(price_str)
+        if form.is_valid():
+            crop = form.save(commit=False)  # Create crop instance without saving to the database yet
+            crop.current_owner = request.user  # Set the current owner
+            crop.current_stage = f'Listed by {request.user.role}'
 
-                crop = Crop.objects.create(
-                    name=crop_name,
-                    quantity=quantity,
-                    price=price,
-                    current_owner=request.user,
-                    current_stage=f'Listed by {request.user.role}'
-                )
-                crop.save()
+            # Handle visibility
+            crop.visibility = request.POST.get('visibility')
 
-                # Prepare transaction details
-                sender = request.user.username  # or user ID if needed
-                recipient = None  # Depending on your application, this could be an actual recipient
-                crop_id = crop.id
+            crop.save()  # Save the crop instance to the database
+            
+            # Save the allowed users if visibility is private
+            if crop.visibility == 'private':
+                allowed_user_ids = request.POST.getlist('allowed_users')  # Get selected user IDs
+                crop.allowed_users.set(allowed_user_ids)  # Assuming you have a ManyToMany relationship
 
-                # Add the transaction to the blockchain
-                blockchain.add_transaction(sender, recipient, price, crop_id)
+            # Add transaction to blockchain...
+            messages.success(request, f"Crop '{crop.name}' listed successfully!")
+            return redirect('list_crops')
+    else:
+        form = CropForm()
 
-                # Mine a new block
-                blockchain.mine_block()  # Call the mine_block method
+    # Get crops for current user and crops that are public or visible to the user
+    user_crops = Crop.objects.filter(current_owner=request.user)  # Crops owned by the user
+    public_crops = Crop.objects.filter(visibility='public')  # Public crops
+    allowed_crops = Crop.objects.filter(allowed_users=request.user)  # Crops visible to the user
 
-                messages.success(request, f"Crop '{crop_name}' listed successfully and added to the blockchain!")
-            except ValueError:
-                messages.error(request, "Invalid quantity or price. Please enter numeric values.")
-        else:
-            messages.error(request, "All fields are required.")
+    crops = user_crops | allowed_crops  # Combine owned and allowed crops
 
-        return redirect('list_crops')
+    return render(request, 'list_crops.html', {
+        'form': form,
+        'crops': crops,
+        'public_crops': public_crops,
+        'users': CustomUser.objects.all()  # Fetch all users for the dropdown
+    })
 
-    crops = Crop.objects.all()
-    return render(request, 'list_crops.html', {'crops': crops})
 
 # def buy_crop(request, crop_id):
 #     crop = Crop.objects.get(id=crop_id)
