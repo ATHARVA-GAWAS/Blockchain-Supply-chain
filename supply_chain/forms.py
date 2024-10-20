@@ -7,15 +7,15 @@ from django import forms
 from .models import Crop
 
 class CropForm(forms.ModelForm):
-    allowed_users = forms.ModelMultipleChoiceField(
-        queryset=CustomUser.objects.all(),  # Filter for customers or specific roles
-        widget=forms.CheckboxSelectMultiple,  # You can also use a select widget
-        required=False
-    )
+    # allowed_users = forms.ModelMultipleChoiceField(
+    #     queryset=CustomUser.objects.all(),  # Filter for customers or specific roles
+    #     widget=forms.CheckboxSelectMultiple,  # You can also use a select widget
+    #     required=False
+    # )
 
     class Meta:
         model = Crop
-        fields = ['name', 'quantity', 'price', 'allowed_users']
+        fields = ['name', 'quantity', 'price']
 
 class CropPriceUpdateForm(forms.ModelForm):
     class Meta:
