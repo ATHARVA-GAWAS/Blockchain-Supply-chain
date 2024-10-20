@@ -152,6 +152,8 @@ def list_crops(request):
             # Handle visibility
             crop.visibility = request.POST.get('visibility')
 
+            crop.price = form.cleaned_data['price']
+
             crop.save()  # Save the crop instance to the database
             
             # Save the allowed users if visibility is private
@@ -160,6 +162,13 @@ def list_crops(request):
                 crop.allowed_users.set(allowed_user_ids)  # Assuming you have a ManyToMany relationship
 
             # Add transaction to blockchain...
+            sender = request.user.username  # or user ID if needed
+            recipient = None  # Depending on your application, this could be an actual recipient
+            crop_id = crop.id
+            blockchain.add_transaction(sender, recipient, crop.price, crop_id)
+
+                # Mine a new block
+            blockchain.mine_block()
             messages.success(request, f"Crop '{crop.name}' listed successfully!")
             return redirect('list_crops')
     else:
@@ -395,7 +404,7 @@ def custom_login(request):
 
     return render(request, 'registration/login.html', {'form': form})
 
-
+@login_required
 def view_blockchain(request):
     blockchain_data = StoreBlock.objects.all()  # Get blockchain data
     return render(request, 'view_blockchain.html', {'blockchain_data': blockchain_data})

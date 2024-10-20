@@ -135,7 +135,11 @@ class Blockchain:
     def __init__(self):
         self.chain = []
         self.current_transactions = []
-        self.create_block(previous_hash='1', proof=100)  # Create the genesis block
+        self.load_chain()  # Load existing blocks from the StoreBlock model
+
+        if not self.chain:
+            # If chain is empty, create genesis block
+            self.create_block(previous_hash='1', proof=100)
 
     def create_block(self, proof, previous_hash=None):
         block = Block(
@@ -156,6 +160,18 @@ class Blockchain:
         self.current_transactions = []  # Reset the current transactions
         self.chain.append(block)
         return block
+
+    def load_chain(self):
+        # Load existing blocks from the StoreBlock model and append to the chain
+        stored_blocks = StoreBlock.objects.all().order_by('index')
+        for stored_block in stored_blocks:
+            block = Block(
+                index=stored_block.index,
+                timestamp=stored_block.timestamp,
+                transactions=stored_block.transactions,
+                previous_hash=stored_block.previous_hash
+            )
+            self.chain.append(block)
 
     def add_transaction(self, sender, recipient, amount, crop_id):
         transaction_id = str(uuid.uuid4())  # Generate a unique ID for the transaction
