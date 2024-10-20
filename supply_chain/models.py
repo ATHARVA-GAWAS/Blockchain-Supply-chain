@@ -105,3 +105,14 @@ class PurchasedCrop(models.Model):
 
     def __str__(self):
         return f"Purchased: {self.crop.name} by {self.buyer.username} from {self.seller.username} | Quantity: {self.quantity} | Price: {self.price}"
+    
+
+class StoreBlock(models.Model):
+    index = models.IntegerField(null=True)
+    timestamp = models.FloatField(default=time)
+    transactions = models.JSONField(default=list)
+    previous_hash = models.CharField(max_length=64)
+    hash = models.CharField(max_length=64)
+
+    def __str__(self):
+        return f"Block {self.index} - Hash: {self.hash}"
