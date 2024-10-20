@@ -1,12 +1,31 @@
 {% extends 'base.html' %}
 {% block content %}
-    <h1>Distributor Dashboard</h1>
-    <h2>Your Crops</h2>
-    <ul>
-        {% for crop in crops %}
-            <li>{{ crop.name }} - {{ crop.quantity }} kg - {{ crop.current_stage }}
+<h1>Distributor Dashboard</h1>
+
+<h2>Your Crops</h2>
+<ul>
+    {% if user_crops %}
+        {% for crop in user_crops %}
+            <li>{{ crop.name }} - {{ crop.quantity }} kg - {{ crop.price }} ({{ crop.status }})
                 <a href="{% url 'buy_crops' crop.id %}">Buy</a>
             </li>
         {% endfor %}
-    </ul>
+    {% else %}
+        <li>No crops listed yet.</li>
+    {% endif %}
+</ul>
+
+<h2>Publicly Available Crops</h2>
+<ul>
+    {% if public_crops %}
+        {% for crop in public_crops %}
+            <li>{{ crop.name }} - {{ crop.quantity }} kg - {{ crop.price }} ({{ crop.status }})
+                <a href="{% url 'buy_crops' crop.id %}">Buy</a>
+            </li>
+        {% endfor %}
+    {% else %}
+        <li>No public crops available.</li>
+    {% endif %}
+</ul>
+
 {% endblock %}

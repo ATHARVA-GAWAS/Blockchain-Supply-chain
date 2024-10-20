@@ -25,11 +25,11 @@ class Crop(models.Model):
     status = models.CharField(max_length=20, choices=[('listed', 'Listed'), ('sold', 'Sold')])
     current_stage = models.CharField(max_length=100, default='Listed by Farmer')
     transaction_hash = models.CharField(max_length=64, blank=True, null=True)
+    allowed_users = models.ManyToManyField(CustomUser, related_name='allowed_crops', blank=True)
+    visibility = models.CharField(max_length=10, choices=[('public', 'Public'), ('private', 'Private')], default='public')
     
     def __str__(self):
         return f"{self.name} - {self.quantity} kg - {self.current_stage}"
-
-
     
 # class Crop(models.Model):
 #     name = models.CharField(max_length=100)
