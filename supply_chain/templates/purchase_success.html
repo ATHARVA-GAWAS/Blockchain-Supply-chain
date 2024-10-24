@@ -1,8 +1,18 @@
 {% extends 'base.html' %}
 {% block content %}
-    <h1>Purchase Successful</h1>
-    <p>Thank you for your purchase! Your transaction has been completed successfully.</p>
-    <p>Transaction ID: {{ transaction_id }}</p>
-    <p>Purchased Crop ID: {{ purchased_crop_id }}</p>
-    <a href="{% url 'home' %}">Return to Home</a>
+<div class="container">
+    <h1>Purchase Successful!</h1>
+    <p>Thank you for your purchase.</p>
+    <h2>Transaction Details</h2>
+    <ul>
+        <li><strong>Crop Name:</strong> {{ crop.name }}</li>
+        <li><strong>Quantity Bought:</strong> {{ quantity }}</li>
+        <li><strong>Total Cost:</strong> ₹{{ total_cost }}</li>
+        <li><strong>Transaction ID:</strong> {{ transaction_id }}</li>
+        <li><strong>Transaction Hash:</strong> {{ transaction_hash}}</li>
+        <li><strong>Remaining Balance:</strong> ₹{{ remaining_balance }}</li>
+    </ul>
+    <a href="{% url 'dashboard' %}" class="btn btn-primary">Go to Dashboard</a>
+    <a href="{% url 'my_crops' %}" class="btn btn-secondary">View My Crops</a>
+</div>
 {% endblock %}

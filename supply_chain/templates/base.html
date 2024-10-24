@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% comment %} <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -26,6 +26,54 @@
             </ul>
         </nav>
     </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html> {% endcomment %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agricultural Supply Chain</title>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                {% if user.is_authenticated %}
+                    <!-- Display Profile Information -->
+                    <li>
+                        <img src="{{ dp_url }}" alt="Profile Picture" class="profile-picture" style="width:50px; height:50px; border-radius:50%;">
+                        <span>Welcome, {{ profile_name }}!</span>
+                    </li>
+                    <li>
+                        <span>Your Balance: {{ available_tokens }} Tokens</span>
+                    </li>
+                    
+                    <!-- Logout button -->
+                    <li><a href="{% url 'logout' %}" class="logout-button">Logout</a></li>
+                {% else %}
+                    <!-- Login and Register links for unauthenticated users -->
+                    <li><a href="{% url 'login' %}">Login</a></li>
+                    <li><a href="{% url 'register' %}">Register</a></li>
+                {% endif %}
+                
+                <!-- Navigation Links -->
+                <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li><a href="{% url 'list_crops' %}">List Crops</a></li>
+                <li><a href="{% url 'transaction_history' %}">Transaction History</a></li>
+                <li><a href="{% url 'purchased_crops' %}">Purchased Crops</a></li>
+                <li><a href="{% url 'trace_crops' %}">Trace Crops</a></li>
+                <li><a href="{% url 'view_blockchain' %}">View Blockchain</a></li>
+                <li><a href="{% url 'my_crops' %}">My Crops</a></li>
+            </ul>
+        </nav>
+    </header>
+
     <main>
         {% block content %}{% endblock %}
     </main>
