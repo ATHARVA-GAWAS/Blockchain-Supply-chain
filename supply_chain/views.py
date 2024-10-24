@@ -1,5 +1,5 @@
 
-from .models import Crop, Transaction, PurchasedCrop
+from .models import Crop, Transaction, PurchasedCrop,Token
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.http import JsonResponse
@@ -10,7 +10,7 @@ from .blockchain import Blockchain, Block
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
 from .forms import CropForm
-
+from decimal import Decimal
 
 # Create your views here.
 from django.shortcuts import render, redirect
@@ -223,25 +223,45 @@ def list_crops(request):
 #         return redirect('list_crops')
 
 #     return render(request, 'buy_crop.html', {'crop': crop})
+
 @login_required
 def buy_crops(request, crop_id):
     # Get the crop based on crop_id
-    # if request.user.role=='FARMER':
-    #     return render(request, 'not_allowed.html')
-    
     crop = get_object_or_404(Crop, id=crop_id)
 
     if request.method == 'POST':
         # Handle the purchase logic
         quantity_to_buy = int(request.POST.get('quantity', 0))
         if quantity_to_buy <= 0 or quantity_to_buy > crop.quantity:
-            return JsonResponse({'error': 'Invalid quantity'}, status=400)
+            return render(request, 'buy_crop.html', {
+                'crop': crop,
+                'error': 'Invalid quantity'
+            })
+
+        # Calculate total cost using Decimal for precision
+        total_cost = Decimal(crop.price) * quantity_to_buy
+
+        # Get the user's balance (ensure it's Decimal)
+        user = request.user
+        user_balance = Decimal(user.balance)
+
+        if user_balance < total_cost:
+            return render(request, 'buy_crop.html', {
+                'crop': crop,
+                'error': 'Insufficient balance'
+            })
+
+        # Deduct the total cost from the user's balance
+        user.balance -= total_cost
+
+        # Save the updated user balance
+        user.save()
 
         # Add the transaction to the blockchain
         blockchain.add_transaction(
             sender=crop.current_owner.username,
-            recipient=request.user.username,
-            amount=crop.price * quantity_to_buy,
+            recipient=user.username,
+            amount=float(total_cost),  # Convert to float for blockchain
             crop_id=crop_id
         )
 
@@ -251,21 +271,21 @@ def buy_crops(request, crop_id):
         # Create a transaction entry in the database
         transaction = Transaction.objects.create(
             seller=crop.current_owner,
-            buyer=request.user,  # Assuming the user is logged in
+            buyer=user,
             crop=crop,
             quantity=quantity_to_buy,
-            price=crop.price,
-            transaction_hash=mined_block.hash  # Use the block hash
+            price=float(crop.price),
+            transaction_hash=mined_block.hash
         )
 
         # Create a PurchasedCrop entry
         purchased_crop = PurchasedCrop.objects.create(
             seller=crop.current_owner,
-            buyer=request.user,
+            buyer=user,
             crop=crop,
             quantity=quantity_to_buy,
-            price=crop.price,
-            transaction_hash=mined_block.hash  # Use the same hash for tracing
+            price=float(crop.price),
+            transaction_hash=mined_block.hash
         )
 
         # Update the crop's quantity
@@ -274,18 +294,92 @@ def buy_crops(request, crop_id):
             crop.status = 'sold'
         crop.save()
 
+        # Render the success page with transaction details
         return render(request, 'purchase_success.html', {
+            'crop': crop,
+            'quantity': quantity_to_buy,
+            'total_cost': total_cost,
             'transaction_id': transaction.id,
-            'purchased_crop_id': purchased_crop.id
+            'purchased_crop_id': purchased_crop.id,
+            'remaining_balance': float(user.balance),
+            'transaction_hash':mined_block.hash
         })
-    
+
     elif request.method == 'GET':
         # Optionally return crop details or a form for purchase
         return render(request, 'buy_crop.html', {
             'crop': crop
         })
     else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
+        return render(request, 'buy_crop.html', {
+            'crop': crop,
+            'error': 'Invalid request method'
+        })
+
+
+# @login_required
+# def buy_crops(request, crop_id):
+#     # Get the crop based on crop_id
+#     # if request.user.role=='FARMER':
+#     #     return render(request, 'not_allowed.html')
+    
+#     crop = get_object_or_404(Crop, id=crop_id)
+
+#     if request.method == 'POST':
+#         # Handle the purchase logic
+#         quantity_to_buy = int(request.POST.get('quantity', 0))
+#         if quantity_to_buy <= 0 or quantity_to_buy > crop.quantity:
+#             return JsonResponse({'error': 'Invalid quantity'}, status=400)
+
+#         # Add the transaction to the blockchain
+#         blockchain.add_transaction(
+#             sender=crop.current_owner.username,
+#             recipient=request.user.username,
+#             amount=crop.price * quantity_to_buy,
+#             crop_id=crop_id
+#         )
+
+#         # Mine a new block to confirm the transaction
+#         mined_block = blockchain.mine_block()
+
+#         # Create a transaction entry in the database
+#         transaction = Transaction.objects.create(
+#             seller=crop.current_owner,
+#             buyer=request.user,  # Assuming the user is logged in
+#             crop=crop,
+#             quantity=quantity_to_buy,
+#             price=crop.price,
+#             transaction_hash=mined_block.hash  # Use the block hash
+#         )
+
+#         # Create a PurchasedCrop entry
+#         purchased_crop = PurchasedCrop.objects.create(
+#             seller=crop.current_owner,
+#             buyer=request.user,
+#             crop=crop,
+#             quantity=quantity_to_buy,
+#             price=crop.price,
+#             transaction_hash=mined_block.hash  # Use the same hash for tracing
+#         )
+
+#         # Update the crop's quantity
+#         crop.quantity -= quantity_to_buy
+#         if crop.quantity == 0:
+#             crop.status = 'sold'
+#         crop.save()
+
+#         return render(request, 'purchase_success.html', {
+#             'transaction_id': transaction.id,
+#             'purchased_crop_id': purchased_crop.id
+#         })
+    
+#     elif request.method == 'GET':
+#         # Optionally return crop details or a form for purchase
+#         return render(request, 'buy_crop.html', {
+#             'crop': crop
+#         })
+#     else:
+#         return JsonResponse({'error': 'Invalid request method'}, status=405)
     
 @login_required
 def purchased_crops(request):

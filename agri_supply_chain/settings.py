@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-a7sc9wyia%#pey9%&a1h8*)sa41#usr(dlr$u&+9=4%bik&&v5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.129.58','0.0.0.0','localhost']
 
 
 # Application definition
@@ -54,6 +54,22 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'agri_supply_chain.urls'
 
+# TEMPLATES = [
+#     {
+#         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+#         'DIRS': [os.path.join(BASE_DIR, 'templates')],
+#         'APP_DIRS': True,
+#         'OPTIONS': {
+#             'context_processors': [
+#                 'django.template.context_processors.debug',
+#                 'django.template.context_processors.request',
+#                 'django.contrib.auth.context_processors.auth',
+#                 'django.contrib.messages.context_processors.messages',
+#             ],
+#         },
+#     },
+# ]
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -65,6 +81,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # Add your custom context processor here
+                'supply_chain.context_processors.user_info',  # Replace 'your_app' with your actual app name
             ],
         },
     },
