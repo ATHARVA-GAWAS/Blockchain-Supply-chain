@@ -1,5 +1,5 @@
 
-from .models import Crop, Transaction, PurchasedCrop,Token
+from .models import Crop, Transaction, PurchasedCrop,Token, UserSpecificCrop
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.http import JsonResponse
@@ -44,6 +44,8 @@ def transaction_history(request):
 @login_required
 def dashboard(request):
     user = request.user
+    all_user_specific_crops = UserSpecificCrop.objects.all()
+    not_allowed_crops = UserSpecificCrop.objects.filter(user=user, allowed=False)
 
     if user.role == 'FARMER':
         # Crops specifically allowed for this user (those listed for them by others)
@@ -52,20 +54,20 @@ def dashboard(request):
         # Publicly available crops (those that are public for all users)
         public_crops = Crop.objects.filter(visibility='public')
 
-        return render(request, 'farmer_dashboard.html', {'user_crops': user_crops, 'public_crops': public_crops})
+        return render(request, 'farmer_dashboard.html', {'user_crops': user_crops, 'public_crops': public_crops,'all_user_specifics': all_user_specific_crops,'not_allowed_crops': not_allowed_crops})
 
     elif user.role == 'DISTRIBUTOR':
         user_crops = Crop.objects.filter(allowed_users=user)
         public_crops = Crop.objects.filter(visibility='public')
 
-        return render(request, 'distributor_dashboard.html', {'user_crops': user_crops, 'public_crops': public_crops})
+        return render(request, 'distributor_dashboard.html', {'user_crops': user_crops, 'public_crops': public_crops,'all_user_specifics': all_user_specific_crops,'not_allowed_crops': not_allowed_crops})
 
     elif user.role == 'CONSUMER':
         # Consumers can view all crops that are publicly available
         public_crops = Crop.objects.filter(visibility='public')
         user_crops = Crop.objects.filter(allowed_users=user)
         
-        return render(request, 'consumer_dashboard.html', {'user_crops': user_crops,'public_crops': public_crops})
+        return render(request, 'consumer_dashboard.html', {'user_crops': user_crops,'public_crops': public_crops,'all_user_specifics': all_user_specific_crops,'not_allowed_crops': not_allowed_crops})
 
     else:
         return redirect('list_crops')
@@ -145,49 +147,66 @@ def list_crops(request):
         form = CropForm(request.POST)
 
         if form.is_valid():
-            crop = form.save(commit=False)  # Create crop instance without saving to the database yet
+            crop = form.save(commit=False)
             crop.current_owner = request.user  # Set the current owner
             crop.current_stage = f'Listed by {request.user.role}'
+            crop.visibility = form.cleaned_data['visibility']
 
-            # Handle visibility
-            crop.visibility = request.POST.get('visibility')
-
-            crop.price = form.cleaned_data['price']
+            # Handle pricing based on visibility
+            if crop.visibility == 'public':
+                crop.price = form.cleaned_data['price']  # Set public price
+                crop.specific_user_price = None  # Clear specific user price if public
 
             crop.save()  # Save the crop instance to the database
-            
+
             # Save the allowed users if visibility is private
             if crop.visibility == 'private':
-                allowed_user_ids = request.POST.getlist('allowed_users')  # Get selected user IDs
-                crop.allowed_users.set(allowed_user_ids)  # Assuming you have a ManyToMany relationship
+                crop.price = form.cleaned_data['price']  # Set public price
+                crop.specific_user_price = form.cleaned_data['specific_user_price']
+
+                allowed_user_ids = request.POST.getlist('allowed_users')
+                crop.allowed_users.set(allowed_user_ids)
+
+                # Create UserSpecificCrop instances for allowed users (allowed=True)
+                for user_id in allowed_user_ids:
+                    user = CustomUser.objects.get(id=user_id)
+                    UserSpecificCrop.objects.create(crop=crop, user=user, allowed=True)
+
+                # Create UserSpecificCrop instances for users who are not allowed (allowed=False)
+                all_user_ids = CustomUser.objects.values_list('id', flat=True)
+                not_allowed_user_ids = set(all_user_ids) - set(map(int, allowed_user_ids))
+
+                for user_id in not_allowed_user_ids:
+                    user = CustomUser.objects.get(id=user_id)
+                    UserSpecificCrop.objects.create(crop=crop, user=user, allowed=False)
 
             # Add transaction to blockchain...
-            sender = request.user.username  # or user ID if needed
-            recipient = None  # Depending on your application, this could be an actual recipient
+            sender = request.user.username
+            recipient = None  # Adjust based on your app logic
             crop_id = crop.id
-            blockchain.add_transaction(sender, recipient, crop.price, crop_id)
-
-                # Mine a new block
+            # Use public_price if visibility is public, else use specific_user_price
+            price_to_use = crop.price if crop.visibility == 'public' else crop.specific_user_price
+            blockchain.add_transaction(sender, recipient, price_to_use, crop_id)
             blockchain.mine_block()
+
             messages.success(request, f"Crop '{crop.name}' listed successfully!")
             return redirect('list_crops')
     else:
         form = CropForm()
 
     # Get crops for current user and crops that are public or visible to the user
-    user_crops = Crop.objects.filter(current_owner=request.user)  # Crops owned by the user
-    public_crops = Crop.objects.filter(visibility='public')  # Public crops
-    allowed_crops = Crop.objects.filter(allowed_users=request.user)  # Crops visible to the user
+    user_crops = Crop.objects.filter(current_owner=request.user)
+    public_crops = Crop.objects.filter(visibility='public')
+    allowed_crops = Crop.objects.filter(allowed_users=request.user)
 
-    crops = user_crops | allowed_crops  # Combine owned and allowed crops
+    crops = user_crops | allowed_crops
 
     return render(request, 'list_crops.html', {
         'form': form,
         'crops': crops,
         'public_crops': public_crops,
-        'users': CustomUser.objects.all()  # Fetch all users for the dropdown
+        'users': CustomUser.objects.all()
     })
-
 
 # def buy_crop(request, crop_id):
 #     crop = Crop.objects.get(id=crop_id)

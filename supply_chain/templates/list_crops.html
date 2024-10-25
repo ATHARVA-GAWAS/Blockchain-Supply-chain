@@ -4,29 +4,32 @@
 <h1>List Crops</h1>
 
 <!-- Crop Listing Form -->
-<form method="POST" action="{% url 'list_crops' %}">
+<form method="post">
     {% csrf_token %}
-    {{ form.as_p }}  <!-- Render the form fields here -->
-
-    <div>
-        <label for="visibility">Visibility:</label>
-        <select name="visibility" id="visibility" onchange="toggleUserSelection(this.value)">
-            <option value="public">Public</option>
-            <option value="private">Specific Users Only</option>
-        </select>
-    </div>
-
-    <div id="userSelection" style="display:none;">
-        <label for="allowed_users">Select Users:</label>
-        <select name="allowed_users" id="allowed_users" multiple>
+    {{ form.as_p }}
+    <div id="allowed-users-section" style="display: none;">
+        <label for="allowed_users">Select Allowed Users:</label>
+        <select name="allowed_users" multiple>
             {% for user in users %}
                 <option value="{{ user.id }}">{{ user.username }}</option>
             {% endfor %}
         </select>
     </div>
-
     <button type="submit">List Crop</button>
 </form>
+
+<script>
+    const visibilitySelect = document.querySelector('[name="visibility"]');
+    const allowedUsersSection = document.getElementById('allowed-users-section');
+
+    visibilitySelect.addEventListener('change', function() {
+        if (this.value === 'private') {
+            allowedUsersSection.style.display = 'block';
+        } else {
+            allowedUsersSection.style.display = 'none';
+        }
+    });
+</script>
 
 {% if messages %}
     <ul>
