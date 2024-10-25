@@ -50,25 +50,17 @@ class CustomUser(AbstractUser):
 class Crop(models.Model):
     name = models.CharField(max_length=100)
     quantity = models.FloatField()
-    price = models.FloatField()  # This is the price per unit of crop (per kg, etc.)
+    price = models.FloatField()  # Price for public visibility
+    specific_user_price = models.FloatField(blank=True, null=True)  # Price for specific users
     current_owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_crops')
     
-    # Tracking status of the crop (whether it's listed or sold)
     status = models.CharField(max_length=20, choices=[('listed', 'Listed'), ('sold', 'Sold')])
-
-    # Tracking the current stage of the crop within the supply chain
     current_stage = models.CharField(max_length=100, default='Listed by Farmer')
-    
-    # Store the transaction hash from blockchain (if the crop was involved in a transaction)
     transaction_hash = models.CharField(max_length=64, blank=True, null=True)
-    
-    # List of users who are allowed to view and interact with this crop if it's private
     allowed_users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='allowed_crops', blank=True)
-
-    # Visibility setting for the crop (either public or private)
     visibility = models.CharField(max_length=10, choices=[('public', 'Public'), ('private', 'Private')], default='public')
 
-    # New fields to accommodate token-related operations
+    # Token-related fields
     price_in_tokens = models.FloatField(blank=True, null=True, help_text='Optional: Price in tokens for the crop.')
     token_currency_enabled = models.BooleanField(default=False, help_text='Is token currency enabled for this crop?')
 
@@ -76,7 +68,6 @@ class Crop(models.Model):
         return f"{self.name} - {self.quantity} kg - {self.current_stage}"
 
     def is_token_enabled(self):
-        """Helper method to check if token currency is enabled for the crop."""
         return self.token_currency_enabled
     
 # class Crop(models.Model):
@@ -204,3 +195,12 @@ class Token(models.Model):
         :return: True if the balance is sufficient, False otherwise.
         """
         return self.balance >= amount
+    
+class UserSpecificCrop(models.Model):
+    crop = models.ForeignKey(Crop, on_delete=models.CASCADE, related_name='user_specifics')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    specific_price = models.FloatField(null=True, blank=True)  # Price specific to this user
+    allowed = models.BooleanField(default=False)  # Whether this user can see the crop
+
+    def __str__(self):
+        return f"{self.user.username} - {self.crop.name} - {self.specific_price}"

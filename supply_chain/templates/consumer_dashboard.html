@@ -6,7 +6,7 @@
 <ul>
     {% if user_crops %}
         {% for crop in user_crops %}
-            <li>{{ crop.name }} - {{ crop.quantity }} kg - {{ crop.price }} ({{ crop.status }})
+            <li>{{ crop.name }} - {{ crop.quantity }} kg - {{ crop.specific_user_price }} ({{ crop.status }})
                 <a href="{% url 'buy_crops' crop.id %}">Buy</a>
             </li>
         {% endfor %}
@@ -26,6 +26,14 @@
     {% else %}
         <li>No public crops available.</li>
     {% endif %}
+    {% for crop in not_allowed_crops %}
+        <li>{{ crop.crop.name }} - {{ crop.crop.quantity }} kg - {{ crop.crop.price }}  ({{ crop.crop.status }})
+            <a href="{% url 'buy_crops' crop.crop.id %}">Buy</a>
+        </li>
+        
+    {% empty %}
+        <li>No crops found where you are not allowed.</li>
+    {% endfor %}
 </ul>
 
 {% endblock %}
