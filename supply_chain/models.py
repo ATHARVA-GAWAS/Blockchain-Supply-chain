@@ -204,3 +204,19 @@ class UserSpecificCrop(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.crop.name} - {self.specific_price}"
+    
+class AadharAuthentication(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    aadhar_number = models.CharField(max_length=12, unique=True)
+    is_verified = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.username} - Aadhar: {self.aadhar_number}"
+
+class PanAuthentication(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    pan_number = models.CharField(max_length=10, unique=True)
+    is_verified = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.username} - PAN: {self.pan_number}"

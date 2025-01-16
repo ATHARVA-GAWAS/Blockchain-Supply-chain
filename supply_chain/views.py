@@ -1,5 +1,4 @@
-
-from .models import Crop, Transaction, PurchasedCrop,Token, UserSpecificCrop
+from .models import AadharAuthentication, Crop, PanAuthentication, Transaction, PurchasedCrop,Token, UserSpecificCrop
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.http import JsonResponse
@@ -564,3 +563,73 @@ def my_crops(request):
     crops = Crop.objects.filter(current_owner=request.user)
 
     return render(request, 'my_crops.html', {'crops': crops})
+
+@login_required
+def aadhar_details_page(request):
+    try:
+        aadhar_details = AadharAuthentication.objects.get(user=request.user)
+        return render(request, 'aadhar_details.html')
+    except AadharAuthentication.DoesNotExist:
+        # Redirect to Aadhar/PAN input form if details are missing
+        return redirect('aadhar_pan_form')
+    
+@login_required
+def pan_details_page(request):
+    try:
+        pan_details = AadharAuthentication.objects.get(user=request.user)
+        return render(request, 'pan_details.html')
+    except AadharAuthentication.DoesNotExist:
+        # Redirect to Aadhar/PAN input form if details are missing
+        return redirect('aadhar_pan_form')
+
+@login_required
+def pan_details_page(request):
+    try:
+        pan_details = PanAuthentication.objects.get(user=request.user)
+        return render(request, 'pan_details.html')
+    except PanAuthentication.DoesNotExist:
+        # Redirect to Aadhar/PAN input form if details are missing
+        return redirect('aadhar_pan_form')
+
+@login_required
+def aadhar_pan_form(request):
+    if request.method == "POST":
+        # Handle form submission
+        aadhar_number = request.POST.get("aadhar_number")
+        pan_number = request.POST.get("pan_number")
+
+        if aadhar_number:
+            AadharAuthentication.objects.create(
+                user=request.user, aadhar_number=aadhar_number, is_verified=False
+            )
+        if pan_number:
+            PanAuthentication.objects.create(
+                user=request.user, pan_number=pan_number, is_verified=False
+            )
+        return redirect('aadhar_details_page')  # Redirect to the Aadhar page after submission
+
+    return render(request, 'aadhar_pan_form.html')
+
+@login_required
+def check_aadhar_authentication(request):
+    try:
+        # Check if the user's Aadhaar information exists and is verified
+        aadhar_auth = AadharAuthentication.objects.get(user=request.user)
+        if aadhar_auth.is_verified:
+            return JsonResponse({"isAuthenticated": True})
+        else:
+            return JsonResponse({"isAuthenticated": False})
+    except AadharAuthentication.DoesNotExist:
+        return JsonResponse({"isAuthenticated": False})
+
+@login_required
+def check_pan_authentication(request):
+    try:
+        # Check if the user's PAN information exists and is verified
+        pan_auth = PanAuthentication.objects.get(user=request.user)
+        if pan_auth.is_verified:
+            return JsonResponse({"isAuthenticated": True})
+        else:
+            return JsonResponse({"isAuthenticated": False})
+    except PanAuthentication.DoesNotExist:
+        return JsonResponse({"isAuthenticated": False})

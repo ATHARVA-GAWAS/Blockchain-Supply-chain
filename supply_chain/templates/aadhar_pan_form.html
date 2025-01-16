@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aadhar and PAN Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-top: 10px;
+        }
+        input {
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enter Your Aadhar or PAN Details</h1>
+        <form method="POST">
+            {% csrf_token %}
+            <label for="aadhar_number">Aadhar Number (optional):</label>
+            <input type="text" id="aadhar_number" name="aadhar_number" maxlength="12" placeholder="Enter Aadhar Number">
+
+            <label for="pan_number">PAN Number (optional):</label>
+            <input type="text" id="pan_number" name="pan_number" maxlength="10" placeholder="Enter PAN Number">
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # supply_chain/urls.py
 from django.urls import path
-from .views import dashboard, list_crops, buy_crops, transaction_history
+from .views import aadhar_details_page, aadhar_pan_form, dashboard, list_crops, buy_crops, pan_details_page, transaction_history
 from .views import home,register  # Import your home view
 from .views import profile_view, edit_crop_price
 from . import views
@@ -41,4 +41,9 @@ urlpatterns = [
     path('accounts/logout/', views.user_logout, name='logout'),
     path('purchased_crops/', purchased_crops, name='purchased_crops'),
     path('blockchain/', view_blockchain, name='view_blockchain'),
+    path('aadhar/', aadhar_details_page, name='aadhar_details_page'),
+    path('pan/', pan_details_page, name='pan_details_page'),
+    path('aadhar-pan-form/', aadhar_pan_form, name='aadhar_pan_form'),
+    path('check-authentication/aadhar', views.check_aadhar_authentication, name='check_aadhar_authentication'),
+    path('check-authentication/pan', views.check_pan_authentication, name='check_pan_authentication'),
 ]

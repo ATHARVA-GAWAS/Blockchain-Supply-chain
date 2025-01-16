@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aadhar / PAN Authentication</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        .message-box {
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #f5f5f5;
+            margin-top: 20px;
+        }
+        .message-box.success {
+            border: 1px solid green;
+            background-color: #d4edda;
+            color: green;
+        }
+        .message-box.info {
+            border: 1px solid #007bff;
+            background-color: #cce5ff;
+            color: #0056b3;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Aadhar / PAN Authentication</h1>
+
+        <!-- Aadhaar Authentication Section -->
+        <div>
+            <div id="aadhar-auth-message" class="message-box" aria-live="polite">Checking Aadhaar authentication...</div>
+            <button id="aadhar-auth-button" onclick="window.location.href='/aadhar-auth-form'">Authenticate Aadhaar</button>
+        </div>
+
+        <!-- PAN Authentication Section -->
+        <div>
+            <div id="pan-auth-message" class="message-box" aria-live="polite">Checking PAN authentication...</div>
+            <button id="pan-auth-button" onclick="window.location.href='/pan-auth-form'">Authenticate PAN</button>
+        </div>
+    </div>
+
+    <script>
+        // Check Aadhaar Authentication Status
+        fetch('/check-authentication/aadhar')
+            .then(response => response.json())
+            .then(data => {
+                const aadharAuthMessageBox = document.getElementById('aadhar-auth-message');
+                const aadharAuthButton = document.getElementById('aadhar-auth-button');
+
+                if (data.isAuthenticated) {
+                    aadharAuthMessageBox.innerHTML = "You are Aadhaar authenticated!";
+                    aadharAuthMessageBox.classList.add('success');
+                    aadharAuthButton.style.display = 'none';
+                } else {
+                    aadharAuthMessageBox.innerHTML = "You need to authenticate via Aadhaar.";
+                    aadharAuthMessageBox.classList.add('info');
+                    aadharAuthButton.style.display = 'inline-block';
+                }
+            })
+            .catch(error => {
+                console.error('Error checking Aadhaar authentication status:', error);
+                document.getElementById('aadhar-auth-message').innerHTML = "An error occurred while checking Aadhaar authentication.";
+            });
+
+        // Check PAN Authentication Status
+        fetch('/check-authentication/pan')
+            .then(response => response.json())
+            .then(data => {
+                const panAuthMessageBox = document.getElementById('pan-auth-message');
+                const panAuthButton = document.getElementById('pan-auth-button');
+
+                if (data.isAuthenticated) {
+                    panAuthMessageBox.innerHTML = "You are PAN authenticated!";
+                    panAuthMessageBox.classList.add('success');
+                    panAuthButton.style.display = 'none';
+                } else {
+                    panAuthMessageBox.innerHTML = "You need to authenticate via PAN.";
+                    panAuthMessageBox.classList.add('info');
+                    panAuthButton.style.display = 'inline-block';
+                }
+            })
+            .catch(error => {
+                console.error('Error checking PAN authentication status:', error);
+                document.getElementById('pan-auth-message').innerHTML = "An error occurred while checking PAN authentication.";
+            });
+    </script>
+</body>
+</html>
